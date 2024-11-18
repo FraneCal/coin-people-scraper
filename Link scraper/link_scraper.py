@@ -40,7 +40,7 @@ def initialize_soup(page_source):
     ]
 
     for link in links_table:
-        with open("Link scraper/links_to_scrape_posts.txt", "a") as file:
+        with open("Post scraper/scrape_posts.txt", "a") as file:
             file.write(f"{link}\n")
     print(f"Information for {link} was sucessfully saved. {len(links_table)} links added to the file.")    
 
