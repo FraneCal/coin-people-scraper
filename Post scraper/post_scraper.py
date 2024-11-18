@@ -13,7 +13,7 @@ def initialize_driver():
     options = Options()
     # options.add_argument('--headless')
     driver = webdriver.Chrome(options=options)
-    driver.get("https://web.archive.org/web/20031118/coinpeople.com")
+    driver.get("https://web.archive.org/web/20230130184517/https://www.coinpeople.com/")
 
     try:
         WebDriverWait(driver, 10).until(
