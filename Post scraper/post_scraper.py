@@ -13,28 +13,37 @@ def initialize_driver():
     options = Options()
     # options.add_argument('--headless')
     driver = webdriver.Chrome(options=options)
-    driver.get("https://web.archive.org/web/20031118/coinpeople.com")
 
-    try:
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_all_elements_located((By.XPATH, '/html/body/table/tbody/tr[3]/td/center/b/div[2]/table/tbody/tr/td/h1/i/font/b/a'))
-        )
-        enter_the_page_button = WebDriverWait(driver, 5).until(EC.element_to_be_clickable((By.XPATH, '/html/body/table/tbody/tr[3]/td/center/b/div[2]/table/tbody/tr/td/h1/i/font/b/a')))
-        enter_the_page_button.click()
-    except TimeoutException:
-        pass
+    driver.get("https://web.archive.org/web/20230130184517/https://www.coinpeople.com/")
 
-    try:
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_all_elements_located((By.XPATH, '/html/body/table[2]/tbody/tr/td[2]/p/a'))
-        )
-        enter_forum = WebDriverWait(driver, 5).until(EC.element_to_be_clickable((By.XPATH, '/html/body/table[2]/tbody/tr/td[2]/p/a')))
-        enter_forum.click()
-    except TimeoutException:
-        pass
+    # WebDriverWait(driver, 10).until(
+    #     EC.presence_of_all_elements_located((By.XPATH, '//*[@id="ipsLayout_contentWrapper"]/nav[2]/ul[2]/li/a'))
+    # )
 
     time.sleep(5)
 
+    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+
+    time.sleep(2)
+
+    page_source = driver.page_source
+
+    initialize_soup(page_source)
+
     driver.quit()
+
+def initialize_soup(page_source):
+    soup = BeautifulSoup(page_source, "html.parser")
+    box = soup.find("ol", class_="ipsList_reset cForumList")
+
+    links = box.find_all("li", class_="cForumRow ipsDataItem ipsDataItem_responsivePhoto  ipsClearfix")
+    links_list = [
+        f"{link.get("href")}" for link in links
+    ]
+    # Should be a total of 24 links.
+    print(links_list)
+
+    # for link in links_table:
+    #     print(f"{link}\n")
 
 initialize_driver()
