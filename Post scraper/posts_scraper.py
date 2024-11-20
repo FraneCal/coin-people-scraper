@@ -1,15 +1,12 @@
 from bs4 import BeautifulSoup
 from selenium import webdriver
-from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 import time
 import sqlite3
 
 def initialize_database():
-    connection = sqlite3.connect("posts_data.db")
+    connection = sqlite3.connect("coin_forum_posts.db")
     cursor = connection.cursor()
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS posts (
@@ -27,7 +24,7 @@ def initialize_database():
     connection.close()
 
 def save_to_database(data):
-    connection = sqlite3.connect("posts_data.db")
+    connection = sqlite3.connect("coin_forum_posts.db")
     cursor = connection.cursor()
 
     try:
@@ -36,7 +33,7 @@ def save_to_database(data):
             VALUES (?, ?, ?, ?, ?, ?, ?)
         """, data)
         connection.commit()
-        print(f"Saved: {data[0]}")
+        # print(f"Saved: {data[0]}")
 
     except sqlite3.IntegrityError:
         # Handle the case where a duplicate link is found
@@ -53,7 +50,7 @@ def initialize_driver():
     # options.add_argument('--headless')
     driver = webdriver.Chrome(options=options)
 
-    driver.get("https://web.archive.org/web/20230203123249/https://www.coinpeople.com/forum/64-new-member-information-and-welcome33/")
+    driver.get("https://web.archive.org/web/20180705012324/http://www.coinpeople.com/forum/4-coin-forum/?page=150")
 
     time.sleep(5)
 
@@ -80,7 +77,7 @@ def initialize_driver():
             # )
             # next_page.click()
           
-            driver.execute_script('document.querySelector("[title=\\"Next page\\"]").click();')
+            driver.execute_script('document.querySelector("[title=\\"Previous page\\"]").click();')
 
             counter += 1
 
@@ -97,18 +94,64 @@ def initialize_driver():
 def basic_post_scraper(page_source):
     soup = BeautifulSoup(page_source, "html.parser")
 
-    # Find all posts in the page
+    # Find all posts on the page
     posts = soup.find_all("div", class_="ipsDataItem_main")
-    replies = soup.find_all("li", {"data-stattype": "forums_comments"})
-    views = soup.find_all("li", {"data-stattype": "num_views"})
-    
-    # Remove the first element in posts
-    if len(posts) > 25:
-        del posts[0]
+
+    # Remove the first 3 elements if the list contains 28 items
+    if len(posts) == 28:
+        posts = posts[3:]  # Slice the list to exclude the first 3 elements
+    elif len(posts) == 26:
+        posts = posts[1:]
+    elif len(posts) == 24:
+        posts = posts[3:]
+    else:
+        pass
+
+    print(f"Posts after filtering: {len(posts)}")
+
+    replies = []
+    views = []
+
+    # Locate stats blocks
+    stat_blocks = soup.find_all("ul", class_="ipsDataItem_stats")
+    print(f"Stat blocks found: {len(stat_blocks)}")
+
+    for block in stat_blocks:
+        try:
+            # Extract replies
+            reply_stat = block.find("span", class_="ipsDataItem_stats_type")
+            if reply_stat and ("reply" in reply_stat.getText().strip().lower()):
+                reply_count = reply_stat.find_previous_sibling("span").getText().strip()
+                replies.append(reply_count)
+            else:
+                replies.append("0")  # Default if no reply data found
+
+            # Extract views
+            view_stat = block.find("span", string=" views")
+            if view_stat:
+                view_count = view_stat.find_previous_sibling("span").getText().strip()
+                views.append(view_count)
+            else:
+                views.append("0")  # Default if no view data found
+
+        except AttributeError:
+            # Handle missing or unexpected structure gracefully
+            replies.append("0")
+            views.append("0")
+
+    print(f"Replies after processing: {len(replies)}")
+    print(f"Views after processing: {len(views)}")
+
+    # Ensure replies and views align with posts
+    while len(replies) < len(posts):
+        replies.append("0")
+
+    while len(views) < len(posts):
+        views.append("0")
 
     archive_prefix = "https://web.archive.org/web/20230506212637/"
 
-    for post, replie, view in zip(posts, replies, views):
+    for post, number_of_replies, number_of_views in zip(posts, replies, views):
         try:
             # Extract details for each post
             post_title = post.find("span", class_="ipsType_break ipsContained").getText().strip()
@@ -116,28 +159,24 @@ def basic_post_scraper(page_source):
             author = post.find("div", class_="ipsDataItem_meta ipsType_reset ipsType_light ipsType_blendLinks").find("a", class_="ipsType_break").getText().strip()
             author_profile_link = post.find("div", class_="ipsDataItem_meta ipsType_reset ipsType_light ipsType_blendLinks").find("a", class_="ipsType_break").get("href")
             date_of_post = post.find("div", class_="ipsDataItem_meta ipsType_reset ipsType_light ipsType_blendLinks").find("time").getText()
-            
-            # Locate number of replies and views within the current post
-            number_of_replies = replie.find("span", class_="ipsDataItem_stats_number").getText().strip()
-            number_of_views = view.find("span", class_="ipsDataItem_stats_number").getText().strip()
-            
+
             # Add archive prefix
             archived_link = f"{archive_prefix}{link}"
             archived_author_profile_link = f"{archive_prefix}{author_profile_link}"
 
             # Save to database
             post_data = (
-                post_title, 
-                archived_link, 
-                author, 
-                archived_author_profile_link, 
-                date_of_post, 
-                number_of_replies, 
+                post_title,
+                archived_link,
+                author,
+                archived_author_profile_link,
+                date_of_post,
+                number_of_replies,
                 number_of_views
             )
 
             save_to_database(post_data)
-            print(f"Saved: {post_title}")
+            # print(f"Saved: {post_title}")
 
         except AttributeError as e:
             print("Error parsing post data:", e)
