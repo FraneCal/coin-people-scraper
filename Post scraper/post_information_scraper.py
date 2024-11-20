@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -90,3 +91,82 @@ def scraper(page_source, post_name, post_link):
 
 # Run the scraper
 initialize_driver()
+=======
+from bs4 import BeautifulSoup
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+import time
+import sqlite3
+
+# Initialize database and create table for comments
+def initialize_database():
+    connection = sqlite3.connect("scraped_comments.db")
+    cursor = connection.cursor()
+
+    # Create a table for storing comments
+    cursor.execute('''CREATE TABLE IF NOT EXISTS comments (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        name TEXT,
+                        profile_link TEXT,
+                        comment_date TEXT,
+                        comment TEXT,
+                        post_name TEXT,
+                        post_link TEXT)''')
+
+    connection.commit()
+    return connection, cursor
+
+# Initialize WebDriver
+def initialize_driver():
+    print("Initializing driver...\n")
+
+    options = Options()
+    # options.add_argument('--headless')  # Uncomment for headless mode
+    driver = webdriver.Chrome(options=options)
+
+    # Target URL
+    driver.get("https://web.archive.org/web/20230506231433/https://www.coinpeople.com/topic/41575-no-new-but-long-time-missing/")
+
+    time.sleep(5)
+
+    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+    time.sleep(2)
+
+    # Scrape the page source
+    page_source = driver.page_source
+    scraper(page_source, "No New, but Long Time Missing", driver.current_url)  # Pass post details
+
+    driver.quit()
+
+# Scraper function
+def scraper(page_source, post_name, post_link):
+    soup = BeautifulSoup(page_source, "html.parser")
+    connection, cursor = initialize_database()
+
+    archive_prefix = "https://web.archive.org/web/20230506212637/"
+
+    # Extract data
+    names = soup.find_all("h3", class_="ipsType_sectionHead cAuthorPane_author ipsType_blendLinks ipsType_break")
+    profile_links = soup.find_all("h3", class_="ipsType_sectionHead cAuthorPane_author ipsType_blendLinks ipsType_break")
+    comment_dates = soup.find_all("div", class_="ipsType_reset ipsResponsive_hidePhone")
+    comments = soup.find_all("div", class_="ipsType_normal ipsType_richText ipsPadding_bottom ipsContained")
+
+    for name, profile_link, comment_date, comment in zip(names, profile_links, comment_dates, comments):
+        # Extract and clean data
+        user_name = name.getText().strip()
+        user_profile_link = f"{archive_prefix}{profile_link.find('a').get('href')}"
+        comment_date_text = comment_date.find("time").getText().strip()
+        comment_text = comment.getText().strip()
+
+        # Insert data into the database
+        cursor.execute('''INSERT INTO comments (name, profile_link, comment_date, comment, post_name, post_link)
+                          VALUES (?, ?, ?, ?, ?, ?)''',
+                       (user_name, user_profile_link, comment_date_text, comment_text, post_name, post_link))
+        connection.commit()
+
+    connection.close()
+    print(f"Scraped data saved to database.")
+
+# Run the scraper
+initialize_driver()
+>>>>>>> 653af61ecc8be1f07a4d63800ab573cec9fc2827
