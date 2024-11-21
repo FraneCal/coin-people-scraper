@@ -77,7 +77,7 @@ def initialize_driver():
             # )
             # next_page.click()
           
-            driver.execute_script('document.querySelector("[title=\\"Previous page\\"]").click();')
+            driver.execute_script('document.querySelector("[title=\\"Next page\\"]").click();')
 
             counter += 1
 

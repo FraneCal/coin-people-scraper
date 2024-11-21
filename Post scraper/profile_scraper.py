@@ -213,8 +213,5 @@ def fetch_profiles_with_posts():
 
 # Run the scraper
 initialize_driver()
-<<<<<<< HEAD
+
 fetch_profiles_with_posts()
-=======
-fetch_profiles_with_posts()
->>>>>>> 653af61ecc8be1f07a4d63800ab573cec9fc2827
