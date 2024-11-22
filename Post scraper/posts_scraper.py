@@ -50,44 +50,55 @@ def initialize_driver():
     # options.add_argument('--headless')
     driver = webdriver.Chrome(options=options)
 
-    driver.get("https://web.archive.org/web/20180705012324/http://www.coinpeople.com/forum/4-coin-forum/?page=150")
+    # Read links from the links.txt file
+    try:
+        with open("Page checker/coin_forum_links.txt", "r") as file:
+            links = file.readlines()
+    except FileNotFoundError:
+        print("Error: 'links.txt' file not found. Please create the file and add links (one per line).")
+        return
 
-    time.sleep(5)
+    for link in links:
+        link = link.strip()  # Remove any extra whitespace or newline characters
+        if not link:
+            continue  # Skip empty lines
 
-    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-
-    time.sleep(2)
-
-    counter = 1
-
-    # Loop to go through all pages
-    while True:
-        print(f"\nCurrently scraping page {counter}.\n")
-
-        # Get the page source for the current page
-        page_source = driver.page_source
-        
-        # Call the basic post scraper to process the current page
-        basic_post_scraper(page_source)
-
-        # Try to find the 'next page' button and click it
+        print(f"Opening link: {link}")
         try:
-            # next_page = WebDriverWait(driver, 10).until(
-            #     EC.element_to_be_clickable((By.XPATH, '//*[@id="elPagination_30a5535a7a65933469c1ef7e81dc96e0_806040338"]/li[9]/a'))
-            # )
-            # next_page.click()
-          
-            driver.execute_script('document.querySelector("[title=\\"Next page\\"]").click();')
+            driver.get(link)
+            time.sleep(5)
 
-            counter += 1
+            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            time.sleep(2)
 
-            time.sleep(5)  # Wait for the page to load
-            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")  # Scroll to the bottom
-            time.sleep(2)  # Wait a bit before continuing
+            counter = 1
 
-        except TimeoutException:
-            print("No more pages to click.")
-            break  # Break the loop if there's no 'next page' button (i.e., we're on the last page)
+            # Loop to go through all pages of the current link
+            while True:
+                print(f"\nCurrently scraping page {counter} of {link}.\n")
+
+                # Get the page source for the current page
+                page_source = driver.page_source
+
+                # Call the basic post scraper to process the current page
+                basic_post_scraper(page_source)
+
+                # Try to find the 'next page' button and click it
+                try:
+                    driver.execute_script('document.querySelector("[title=\\"Next page\\"]").click();')
+
+                    counter += 1
+
+                    time.sleep(5)  # Wait for the page to load
+                    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")  # Scroll to the bottom
+                    time.sleep(2)  # Wait a bit before continuing
+
+                except Exception:
+                    print(f"No more pages to scrape for {link}.")
+                    break  # Break the loop if there's no 'next page' button
+
+        except Exception as e:
+            print(f"Error processing link {link}: {e}")
 
     driver.quit()
 
