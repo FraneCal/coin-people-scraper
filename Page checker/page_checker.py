@@ -6,13 +6,21 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 
 # Initialize the CSV file for error logging
+<<<<<<< HEAD
 csv_file = "Page checker/world_coin_forum.csv"
+=======
+csv_file = "error_log.csv"
+>>>>>>> refs/remotes/origin/master
 with open(csv_file, 'w', newline='') as file:
     writer = csv.writer(file)
     writer.writerow(["starting_url", "date", "last_url"])  # Write header row
 
 # Read URLs from the file
+<<<<<<< HEAD
 input_file = "Page checker/world_coin_forum_links.txt"
+=======
+input_file = "modified_links.txt"
+>>>>>>> refs/remotes/origin/master
 try:
     with open(input_file, 'r') as file:
         urls = [line.strip() for line in file.readlines() if line.strip()]
@@ -22,7 +30,11 @@ except FileNotFoundError:
 
 # Initialize the WebDriver
 driver = webdriver.Chrome()
+<<<<<<< HEAD
 # driver.maximize_window()
+=======
+driver.maximize_window()
+>>>>>>> refs/remotes/origin/master
 
 try:
     for starting_url in urls:

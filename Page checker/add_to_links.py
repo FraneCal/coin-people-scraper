@@ -20,9 +20,18 @@ def append_to_links(input_file, output_file, append_path):
 
 
 # Specify the input file, output file, and the path to append
+<<<<<<< HEAD
 input_file = "Page checker/links_to_modify.txt"
 output_file = "Page checker/ancient_coin_forum_links.txt"
 append_path = "/forum/245-ancient-coin-forum/page/5/"
 
 # Run the function
 append_to_links(input_file, output_file, append_path)
+=======
+input_file = "links_to_check.txt"
+output_file = "modified_links.txt"
+append_path = "/forum/4-coin-forum/?page=6"
+
+# Run the function
+append_to_links(input_file, output_file, append_path)
+>>>>>>> refs/remotes/origin/master
