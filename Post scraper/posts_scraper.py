@@ -52,7 +52,7 @@ def initialize_driver():
 
     # Read links from the links.txt file
     try:
-        with open("Page checker/coin_forum_links.txt", "r") as file:
+        with open("first_pages.txt", "r") as file:
             links = file.readlines()
     except FileNotFoundError:
         print("Error: 'links.txt' file not found. Please create the file and add links (one per line).")
@@ -72,6 +72,8 @@ def initialize_driver():
             time.sleep(2)
 
             counter = 1
+            repeated_count = 0
+            last_page_source = None  # To track the content of the last page
 
             # Loop to go through all pages of the current link
             while True:
@@ -79,6 +81,17 @@ def initialize_driver():
 
                 # Get the page source for the current page
                 page_source = driver.page_source
+
+                # Check if the page is the same as the last one
+                if page_source == last_page_source:
+                    repeated_count += 1
+                    print(f"Page content repeated {repeated_count} time(s).")
+                    if repeated_count >= 3:
+                        print(f"Same page detected 3 times. Moving to the next link.")
+                        break
+                else:
+                    repeated_count = 0  # Reset the counter if the page is different
+                    last_page_source = page_source  # Update the last page content
 
                 # Call the basic post scraper to process the current page
                 basic_post_scraper(page_source)
@@ -193,4 +206,3 @@ def basic_post_scraper(page_source):
             print("Error parsing post data:", e)
 
 initialize_driver()
-
